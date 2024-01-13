@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using MiniExcelLibs;
@@ -66,6 +67,7 @@ namespace WinFormsApp1
 
     public static class DownloadSheet
     {
+        public static List<string> array = new List<string>(); 
         public class WebClientEx : WebClient
         {
             public WebClientEx(CookieContainer container)
@@ -127,8 +129,10 @@ namespace WinFormsApp1
 
             CsvParser.CsvParser csvparser = new CsvParser.CsvParser(delimeter: ',');
             var csvarray = csvparser.Parse(outputCSVdata);
+
             foreach (string[] str in csvarray.Skip(1))
             {
+                array.Add(string.Join("",str));
                 if (str[0] != null && str[1] != null && str[1] != "")
                 {
                     using (StreamWriter tw = new StreamWriter(fullpath, append: true))

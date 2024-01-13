@@ -1,9 +1,11 @@
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 
 namespace WinFormsApp1
 {
     public partial class Form1 : Form
     {
+        static bool flawed = false;
         public Form1()
         {
             InitializeComponent();
@@ -12,9 +14,9 @@ namespace WinFormsApp1
         private void Form1_Load(object sender, EventArgs e)
         {
             var configdict = new Dictionary<string, string>();
-            if (File.Exists("config.txt"))
+            if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "config.txt")))
             {
-                var config = File.ReadAllLines("config.txt");
+                var config = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "config.txt"));
                 foreach (var line in config)
                 {
                     configdict.Add(line.Split('=')[0], line.Split('=')[1]);
@@ -24,6 +26,26 @@ namespace WinFormsApp1
 
                     }
                 }
+            }
+            if(!Directory.Exists(Path.Combine(textBox1.Text, "Translations")))
+            {
+                Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations"));
+            }
+            if (!Directory.Exists(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet")))
+            {
+                Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet"));
+            }
+            if (!Directory.Exists(Path.Combine(textBox1.Text, "Translations", "GameFilesBackUp")))
+            {
+                Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations", "GameFilesBackUp"));
+            }
+            if (!Directory.Exists(Path.Combine(textBox1.Text, "Translations", "NewFiles")))
+            {
+                Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations", "NewFiles"));
+            }
+            if (!Directory.Exists(Path.Combine(textBox1.Text, "Translations", "UntranslatedLines")))
+            {
+                Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations", "UntranslatedLines"));
             }
         }
 
@@ -104,9 +126,36 @@ namespace WinFormsApp1
                     textBox1.Text = fbd.SelectedPath;
 
                 }
+                if (!Directory.Exists(Path.Combine(textBox1.Text, "Translations")))
+                {
+                    Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations"));
+                }
+                if (!Directory.Exists(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet")))
+                {
+                    Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet"));
+                }
+                if (!Directory.Exists(Path.Combine(textBox1.Text, "Translations", "GameFilesBackUp")))
+                {
+                    Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations", "GameFilesBackUp"));
+                }
+                if (!Directory.Exists(Path.Combine(textBox1.Text, "Translations", "NewFiles")))
+                {
+                    Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations", "NewFiles"));
+                }
+                if (!Directory.Exists(Path.Combine(textBox1.Text, "Translations", "UntranslatedLines")))
+                {
+                    Directory.CreateDirectory(Path.Combine(textBox1.Text, "Translations", "UntranslatedLines"));
+                }
+                if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "config.txt")))
+                {
+                    File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "config.txt"));
+                }
+                File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "config.txt"), "DEFAULTPATH=" + textBox1.Text);
 
+
+                }
             }
-        }
+        
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
@@ -120,6 +169,12 @@ namespace WinFormsApp1
 
         private void button3_Click(object sender, EventArgs e)
         {
+            if(flawed)
+            {
+                textBox3.AppendText("Sadly, the translation contains one or several mistakes. They need to be fixed in the spreadsheet before patching the game. Afterwards, juste re-download the translation in the app and you're good to go !" + Environment.NewLine + Environment.NewLine);
+            }
+            else
+            { 
             Helpers.untranslated.Clear();
 
             var TranslationDict = Helpers.FileToDictionary(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Translations.txt"));
@@ -199,6 +254,7 @@ namespace WinFormsApp1
             textBox3.AppendText("Patched game files have been generated. They are stored in " + textBox1.Text + @"\Translations\NewFiles\" + Environment.NewLine + "To use them, copy them to your data folder, i.e. " + textBox1.Text + @"\game\" + Environment.NewLine + "Hopefully, it will work fine !");
             textBox3.AppendText(@"Notice that currently untranslated lines have been stored in \Translations\UntranslatedLines\UN.txt" + Environment.NewLine);
         }
+        }
 
         private void textBox3_TextChanged(object sender, EventArgs e)
         {
@@ -212,60 +268,89 @@ namespace WinFormsApp1
 
         private void button5_Click(object sender, EventArgs e)
         {
+            flawed = false;
             textBox3.Clear();
             var lines = File.ReadAllLines(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Translations.txt"));
             for (int i = 0; i < lines.Length; i++)
             {
-                var chinese = lines[i].Split("¤")[0];
-                var english = lines[i].Split("¤")[1];
-                if (english.Contains("\""))
+                if (lines[i] != "" && lines[i] != null)
                 {
-                    textBox3.AppendText("Found double quotes in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
-                }
-                if ((chinese.Contains("【") || chinese.Contains("】")) && (!english.Contains("【") || !english.Contains("】")))
-                {
-                    textBox3.AppendText("Brackets mismatch in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
-                }
-                if ((chinese.Contains("（") || chinese.Contains("）")) && (!english.Contains("（") || !english.Contains("）")))
-                {
-                    textBox3.AppendText("Parenthesis mismatch in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
-                }
-                if (Regex.Matches(chinese, "<[^>]*>").Count != Regex.Matches(english, "<[^>]*>").Count || Regex.Matches(chinese, "\\{[^\\}]*\\}").Count != Regex.Matches(english, "\\{[^\\}]*\\}").Count)
-                {
-                    textBox3.AppendText("Symbol ( < > { } ) mismatch in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
-                }
-                if (Regex.Matches(chinese, @"\[([^\]]+)\]").Count > 0)
-                {
-                    var chmatches = Regex.Matches(chinese, @"\[([^\]]+)\]");
-                    var enmatches = Regex.Matches(english, @"\[([^\]]+)\]");
-                    var chlist = new List<string>();
-                    var enlist = new List<string>();
-
-                    foreach (var ch in chmatches)
+                    if (!lines[i].Contains("¤") || lines[i].StartsWith("¤") || lines[i].EndsWith("¤"))
                     {
-                        chlist.Add(ch.ToString());
-                    }
-                    foreach (var en in enmatches)
+                        textBox3.AppendText("WARNING : One of your lines does has an issue with the separator symbol, ¤, please check line n°" + i+1 + "!" + Environment.NewLine + lines[i] + Environment.NewLine);
+                        textBox3.AppendText("SKIPPING this line fow now, it won't be patched into the game but you may continue" + Environment.NewLine+ Environment.NewLine);
+                        lines[i] = "0¤0";
+                     }
+                    else
                     {
-                        enlist.Add(en.ToString());
-                    }
-                    for (int j = 0; j < chlist.Count; j++)
-                    {
-                        if (chlist[j] != enlist[j])
+                        var chinese = lines[i].Split("¤")[0];
+                        var english = lines[i].Split("¤")[1];
+                        if (english.Contains("\""))
                         {
-                            textBox3.AppendText("Text between [ ] mismatch in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                            flawed = true;
+                            textBox3.AppendText("ERROR : Found double quotes in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                        }
+                        if ((chinese.Contains("【") || chinese.Contains("】")) && (!english.Contains("【") || !english.Contains("】")))
+                        {
+                            flawed = true;
+                            textBox3.AppendText("ERROR : Brackets mismatch in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                        }
+                        if ((chinese.Contains("（") || chinese.Contains("）")) && (!english.Contains("（") || !english.Contains("）")))
+                        {
+                            flawed = true;
+                            textBox3.AppendText("ERROR : Parenthesis mismatch in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                        }
+                        if (Regex.Matches(chinese, "<[^>]*>").Count != Regex.Matches(english, "<[^>]*>").Count || Regex.Matches(chinese, "\\{[^\\}]*\\}").Count != Regex.Matches(english, "\\{[^\\}]*\\}").Count)
+                        {
+                            flawed = true;
+                            textBox3.AppendText("ERROR : Symbol ( < > { } ) mismatch in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                        }
+                        if (Regex.Matches(chinese, @"\[([^\]]+)\]").Count > 0)
+                        {
+
+                            var chmatches = Regex.Matches(chinese, @"\[([^\]]+)\]");
+                            var enmatches = Regex.Matches(english, @"\[([^\]]+)\]");
+                            var chlist = new List<string>();
+                            var enlist = new List<string>();
+
+                            foreach (var ch in chmatches)
+                            {
+                                chlist.Add(ch.ToString());
+                            }
+                            foreach (var en in enmatches)
+                            {
+                                enlist.Add(en.ToString());
+                            }
+                            for (int j = 0; j < chlist.Count; j++)
+                            {
+                                if (chlist[j] != enlist[j])
+                                {
+
+                                    textBox3.AppendText("ERROR : Text between [ ] mismatch in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                                    flawed = true;
+                                }
+                            }
 
                         }
+                        if (Regex.Matches(chinese, "·").Count != Regex.Matches(english, "·").Count)
+                        {
+                            textBox3.AppendText("· character mismatch between in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                            flawed = true;
+                        }
                     }
-
-
-                }
-                if (Regex.Matches(chinese, "·").Count != Regex.Matches(english, "·").Count)
-                {
-                    textBox3.AppendText("· character mismatch between in translation line n°" + i + 1 + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
-                }
+                    
             }
+            }
+
             textBox3.AppendText("Done !" + Environment.NewLine);
+            if(flawed)
+            {
+                textBox3.AppendText("The translation contains errors... can't patch the game, or it will likely crash ! Please fix them using the spreadsheet and re-check them here" + Environment.NewLine);
+            }
+            else
+            {
+                textBox3.AppendText("Everything looks good, ready to patch !" + Environment.NewLine);
+            }
         }
 
         private void fontDialog1_Apply(object sender, EventArgs e)
