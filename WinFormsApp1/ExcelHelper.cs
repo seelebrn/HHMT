@@ -129,18 +129,25 @@ namespace WinFormsApp1
 
             CsvParser.CsvParser csvparser = new CsvParser.CsvParser(delimeter: ',');
             var csvarray = csvparser.Parse(outputCSVdata);
-
-            foreach (string[] str in csvarray.Skip(1))
+            var i = 1;
+            foreach (string[] str in csvarray)
             {
-                array.Add(string.Join("",str));
-                if (str[0] != null && str[1] != null && str[1] != "")
+
+                if(str != null)
+                {
+                    if (str[0] != null && str[0] != "" && str[1] != null && str[1] != "" && str[0] != " " && str[1] != " ") 
                 {
                     using (StreamWriter tw = new StreamWriter(fullpath, append: true))
                     {
-                        tw.Write(str[0] + "¤" + str[1] + Environment.NewLine);
+                        tw.WriteLine(str[0] + "¤" + str[1]);
+                        Helpers.lineorder.Add(i, str[0]);
+
+                        }
                     }
                 }
+                i++;
             }
+            File.WriteAllLines(fullpath, File.ReadAllLines(fullpath).Where(l => !string.IsNullOrWhiteSpace(l)));
         }
     }
 }

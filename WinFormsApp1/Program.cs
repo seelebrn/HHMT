@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace WinFormsApp1
@@ -20,6 +21,8 @@ namespace WinFormsApp1
     }
     public static class Helpers
     {
+        static public string path;
+        static public Dictionary<int, string> lineorder = new Dictionary<int, string>();
         static public List<string> untranslated = new List<string>();
         static public List<string> translationDict = new List<string>();
         public static readonly Regex cjkCharRegex = new Regex(@"\p{IsCJKUnifiedIdeographs}");
@@ -37,31 +40,48 @@ namespace WinFormsApp1
         }
         public static Dictionary<string, string> FileToDictionary(string dir)
         {
-            var directory = "C:\\games\\fxl\\game";
 
+            
 
             Dictionary<string, string> dict = new Dictionary<string, string>();
 
-            IEnumerable<string> lines = File.ReadLines(Path.Combine(directory, "Translations", dir));
+            IEnumerable<string> lines = File.ReadLines(dir);
 
             foreach (string line in lines)
             {
-
-                var arr = line.Split('¤');
-                if (arr[0] != arr[1])
+                Console.WriteLine(line);
+                try
                 {
-                    var pair = new KeyValuePair<string, string>(Regex.Replace(arr[0], @"\t|\n|\r", ""), arr[1]);
-
-                    if (!dict.ContainsKey(pair.Key))
-                        dict.Add(pair.Key, pair.Value);
-
-
-                    else
+                    var arr = line.Split('¤');
+                    if (arr[0] != null && arr[1] != null && arr[0] != "" && arr[1] != "")
                     {
-                        //Debug.Log("Not touching this with a 10ft pole : " + arr[0]);
+                        if (arr[0] != arr[1])
+                        {
+                            var pair = new KeyValuePair<string, string>(Regex.Replace(arr[0], @"\t|\n|\r", ""), arr[1]);
+
+                            if (!dict.ContainsKey(pair.Key))
+
+                                dict.Add(pair.Key, pair.Value);
+                        }
+
+
+
+
+                        else
+                        {
+                            //Debug.Log("Not touching this with a 10ft pole : " + arr[0]);
+                        }
                     }
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine("*****WARNING : *****" + e.ToString());
+                }
             }
+                
+
+            
+        
 
 
             return dict;
