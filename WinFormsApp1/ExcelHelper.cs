@@ -115,7 +115,7 @@ namespace WinFormsApp1
 
         public static void Main(string url, string path)
         {
-
+            Helpers.lineorder.Clear();
             string fullpath = Path.Combine("C:\\games\\fxl\\Translations", "DownloadedFromSpreadSheet", path);
 
             WebClientEx wc = new WebClientEx(new CookieContainer());
@@ -139,8 +139,8 @@ namespace WinFormsApp1
                 {
                     using (StreamWriter tw = new StreamWriter(fullpath, append: true))
                     {
-                        tw.WriteLine(str[0] + "¤" + str[1]);
-                        Helpers.lineorder.Add(i, str[0]);
+                        tw.WriteLine(str[0] + "¤" + "Line n° " + i + " : " + str[1]); //Delete this experimental feature when I'm done and replace it with tw.WriteLine(str[0] + "¤" + str[1])
+                            Helpers.lineorder.Add(i, str[0]);
 
                         }
                     }
@@ -148,6 +148,48 @@ namespace WinFormsApp1
                 i++;
             }
             File.WriteAllLines(fullpath, File.ReadAllLines(fullpath).Where(l => !string.IsNullOrWhiteSpace(l)));
+        }
+        public static void MainCommon(string url, string path)
+        {
+            Helpers.replacements.Clear();
+            Helpers.final.Clear();
+            string fullpath = Path.Combine("C:\\games\\fxl\\Translations", "DownloadedFromSpreadSheet", path);
+
+            WebClientEx wc = new WebClientEx(new CookieContainer());
+            wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
+            wc.Headers.Add("DNT", "1");
+            wc.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            wc.Headers.Add("Accept-Encoding", "deflate");
+            wc.Headers.Add("Accept-Language", "en-US,en;q=0.5");
+
+            var outputCSVdata = wc.DownloadString(url);
+
+            CsvParser.CsvParser csvparser = new CsvParser.CsvParser(delimeter: ',');
+            var csvarray = csvparser.Parse(outputCSVdata);
+            var i = 1;
+
+            foreach (string[] str in csvarray)
+            {
+                var array = new List<string>();
+                if (str != null)
+                {
+                    if (str[0] != null && str[0] != "")
+                    {
+                      
+                        for(int j=1; j<=4; j++)
+                        {
+                            if (str[j] != null && str[j] != "")
+                            {
+                                //Console.WriteLine(j + " : str[j] : " + str[j]);
+                                array.Add(str[j]);
+                            }
+                        }
+                        Helpers.replacements.Add(str[0], array);
+                        Helpers.final.Add(str[0], str[5]);
+                    }
+                }
+                i++;
+            }
         }
     }
 }

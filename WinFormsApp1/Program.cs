@@ -23,6 +23,9 @@ namespace WinFormsApp1
     {
         static public string path;
         static public Dictionary<int, string> lineorder = new Dictionary<int, string>();
+        static public Dictionary<string, List<string>> replacements = new Dictionary<string, List<string>>();
+        static public Dictionary<string, string> final = new Dictionary<string, string>();
+        static public Dictionary<int,List<string>> towrite = new Dictionary<int, List<string>>();
         static public List<string> untranslated = new List<string>();
         static public List<string> translationDict = new List<string>();
         public static readonly Regex cjkCharRegex = new Regex(@"\p{IsCJKUnifiedIdeographs}");

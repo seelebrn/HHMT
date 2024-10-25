@@ -41,6 +41,7 @@
             button5 = new Button();
             fontDialog1 = new FontDialog();
             button6 = new Button();
+            button7 = new Button();
             SuspendLayout();
             // 
             // button2
@@ -151,11 +152,22 @@
             button6.UseVisualStyleBackColor = true;
             button6.Click += button6_Click;
             // 
+            // button7
+            // 
+            button7.Location = new Point(48, 269);
+            button7.Name = "button7";
+            button7.Size = new Size(198, 23);
+            button7.TabIndex = 11;
+            button7.Text = "AutoReplace in Sheet";
+            button7.UseVisualStyleBackColor = true;
+            button7.Click += button7_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(button7);
             Controls.Add(button6);
             Controls.Add(button5);
             Controls.Add(textBox3);
@@ -187,5 +199,6 @@
         private Button button5;
         private FontDialog fontDialog1;
         private Button button6;
+        private Button button7;
     }
 }

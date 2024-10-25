@@ -1,5 +1,10 @@
+using MiniExcelLibs;
 using System.ComponentModel;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Policy;
 using System.Text.RegularExpressions;
+using static WinFormsApp1.DownloadSheet;
 
 namespace WinFormsApp1
 {
@@ -61,6 +66,7 @@ namespace WinFormsApp1
                 File.Delete(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Translations.txt"));
             }
             DownloadSheet.Main(@"https://docs.google.com/spreadsheets/d/1BoqPuD8CIJmfDyvMHAkvzphGkaSrFr3fZDkkQAViZLg/gviz/tq?tqx=out:csv&sheet=Final", Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Translations.txt"));
+            DownloadSheet.MainCommon(@"https://docs.google.com/spreadsheets/d/1BoqPuD8CIJmfDyvMHAkvzphGkaSrFr3fZDkkQAViZLg/gviz/tq?tqx=out:csv&sheet=Common", Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Common.txt"));
             textBox2.Text = "Translations stored in " + textBox1.Text + @"\Translations\DownloadedFromSpreadsheet" + " as Translations.txt";
         }
 
@@ -273,7 +279,7 @@ namespace WinFormsApp1
 
         private int FindLineNumber(string s)
         {
-            if(Helpers.lineorder.ContainsValue(s))
+            if (Helpers.lineorder.ContainsValue(s))
             {
                 return Helpers.lineorder.FirstOrDefault(x => x.Value == s).Key + 1;
             }
@@ -298,19 +304,17 @@ namespace WinFormsApp1
                     if (lines[i] != "" && lines[i] != null)
                     {
 
-
-
                         if (english.Contains("\""))
                         {
                             flawed = true;
                             textBox3.AppendText("ERROR : Found double quotes in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
                         }
-                        if ((chinese.Contains("【") || chinese.Contains("】")) && (!english.Contains("【") || !english.Contains("】")))
+                        if ((chinese.Contains("【") || chinese.Contains("】")) && (!english.Contains("【") && !english.Contains("】")))
                         {
                             flawed = true;
                             textBox3.AppendText("ERROR : Brackets mismatch in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
                         }
-                        if ((chinese.Contains("（") || chinese.Contains("）")) && (!english.Contains("（") || !english.Contains("）")))
+                        if ((chinese.Contains("（") && !english.Contains("（")) || (chinese.Contains("）") && !english.Contains("）")))
                         {
                             flawed = true;
                             textBox3.AppendText("ERROR : Parenthesis mismatch in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
@@ -318,11 +322,11 @@ namespace WinFormsApp1
                         if (Regex.Matches(chinese, "<[^>]*>").Count != Regex.Matches(english, "<[^>]*>").Count || Regex.Matches(chinese, "\\{[^\\}]*\\}").Count != Regex.Matches(english, "\\{[^\\}]*\\}").Count)
                         {
                             flawed = true;
-                            textBox3.AppendText("ERROR : Symbol ( < > { } ) mismatch in translation line n°" + FindLineNumber(chinese)  + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                            textBox3.AppendText("ERROR : Symbol ( < > { } ) mismatch in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
                         }
                         if (Regex.Matches(chinese, @"\[([^\]]+)\]").Count > 0)
                         {
-
+                            var done = new List<int>();
                             var chmatches = Regex.Matches(chinese, @"\[([^\]]+)\]");
                             var enmatches = Regex.Matches(english, @"\[([^\]]+)\]");
                             var chlist = new List<string>();
@@ -342,16 +346,29 @@ namespace WinFormsApp1
                                 //Console.WriteLine("CHLIST : " + chlist.Count + " : ENLIST : " + enlist.Count);
                                 try
                                 {
-                                    if (chlist[j] != enlist[j])
-                                    {
 
+                                    if (!enlist.Contains(chlist[j]))
+                                    {
+                                        if(!done.Contains(FindLineNumber(chinese)))
+                                        { 
                                         textBox3.AppendText("ERROR : Text between [ ] mismatch in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
                                         flawed = true;
+                                        done.Add(FindLineNumber(chinese));
+                                        }
                                     }
                                 }
-                                catch
+                                catch (Exception x)
                                 {
-                                    textBox3.AppendText("ERROR : Text between [ ] mismatch in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                                   
+                                    textBox3.AppendText("ERRORcatch : Text between [ ] mismatch in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                                    foreach (var item in chlist)
+                                    {
+                                        textBox3.AppendText("CHList" + item.ToString() + Environment.NewLine);
+                                    }
+                                    foreach (var item in enlist)
+                                    {
+                                        textBox3.AppendText("ENList : " + item.ToString() + Environment.NewLine);
+                                    }
                                     flawed = true;
                                 }
                             }
@@ -359,10 +376,47 @@ namespace WinFormsApp1
                         }
                         if (Regex.Matches(chinese, @"\·").Count != Regex.Matches(english, @"\·").Count)
                         {
-                            textBox3.AppendText("· character mismatch between in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine );
+                            textBox3.AppendText("· character mismatch between in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine);
                             textBox3.AppendText("Number of · characters in CH line : " + Regex.Matches(chinese, "·").Count + " ; vs · characters in EN line : " + Regex.Matches(english, "·").Count + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
                             flawed = true;
                         }
+
+                        var chtagsreg = Regex.Matches(chinese, @"{/color}|{color=[^}]*}").ToList();
+                        var entagsreg = Regex.Matches(english, @"{/color}|{color[=| ][^}]*}").ToList();
+                        var ListCH = chtagsreg.Where(p => p.Success).Select(p => p.Value).ToList().OrderBy(x => x).ToList();
+                        var ListEN = entagsreg.Where(p => p.Success).Select(p => p.Value).ToList().OrderBy(x => x).ToList();
+
+
+                        /*if (ListCH.Count != 0 && ListEN.Count != 0)
+                        {
+                            var a = ListCH.SequenceEqual(ListEN);
+                            if (a == false)
+                            {
+                                Console.WriteLine("Color tags mismatch line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine);
+
+                                Console.WriteLine("List CH : " + String.Join("\n", ListCH));
+                                Console.WriteLine("List EN : " + String.Join("\n", ListEN));
+
+                                textBox3.AppendText("Color tags mismatch line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine);
+
+                                textBox3.AppendText("Chinese line : " + chinese + Environment.NewLine + "English line : " + english + Environment.NewLine);
+                                        textBox3.AppendText("There's potentially an opening color tag i.e. {color=#xxxxxx} which isn't closed with a {/color}. " + Environment.NewLine + 
+                                            "You may have {color=#xxxxxx}yyy{color=#xxxxxx}zzz {/color} {/color}, but you can't have {color=#xxxxxx}yyy{/color}{/color} or {color=#xxxxxx}{color=#xxxxxx}yyy{/color}. \n In other words, take care that any opening color tag is matched somewhere with a closed tag and vice versa !" +
+                                            Environment.NewLine + "There may also be a nasty space between a {color= # or {color =#. It should be {color=# "+ Environment.NewLine + Environment.NewLine);
+                                        flawed = true;
+
+
+
+                            }
+                            else
+                            {
+                                Console.WriteLine("Line : " + FindLineNumber(chinese) + ": Similar lists");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Line : " + FindLineNumber(chinese) + ": Empty lists");
+                        }*/
 
                     }
                 }
@@ -375,7 +429,7 @@ namespace WinFormsApp1
                 }
             }
             textBox3.AppendText("Done !" + Environment.NewLine);
-            if(flawed)
+            if (flawed)
             {
                 textBox3.AppendText("The translation contains errors... can't patch the game, or it will likely crash ! Please fix them using the spreadsheet and re-check them here" + Environment.NewLine);
             }
@@ -400,5 +454,97 @@ namespace WinFormsApp1
             }
         }
 
+        private void button7_Click(object sender, EventArgs e)
+        {
+            WebClientEx wc = new WebClientEx(new CookieContainer());
+            wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
+            wc.Headers.Add("DNT", "1");
+            wc.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            wc.Headers.Add("Accept-Encoding", "deflate");
+            wc.Headers.Add("Accept-Language", "en-US,en;q=0.5");
+
+            var outputCSVdata = wc.DownloadString(@"https://docs.google.com/spreadsheets/d/1BoqPuD8CIJmfDyvMHAkvzphGkaSrFr3fZDkkQAViZLg/gviz/tq?tqx=out:csv&sheet=Translations");
+
+            CsvParser.CsvParser csvparser = new CsvParser.CsvParser(delimeter: ',');
+            var csvarray = csvparser.Parse(outputCSVdata);
+            var i = 1;
+            if (File.Exists(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Replaced.txt")))
+            {
+                File.Delete(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Replaced.txt"));
+            }
+
+            using (StreamWriter tw = new StreamWriter(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Replaced.txt"), append: true))
+            {
+
+
+                var h = 0;
+                foreach (string[] str in csvarray)
+                {
+                    h++;
+                    if (h > 1)
+                    {
+                        Console.WriteLine("H : " + h + " // " + str);
+                        var z = "";
+                        if (str[2] != null && str[2] != "")
+                        {
+                            foreach (var x in Helpers.replacements)
+                            {
+                                foreach (var y in x.Value)
+                                {
+                                    if (str[2].Contains(y))
+                                    {
+                                        //Console.WriteLine("To Replace : " + y + " // Replacement Value : " + Helpers.final[x.Key]);
+                                        //Console.WriteLine("Before : " + str[2]);
+                                        z = Regex.Replace(str[2], y, Helpers.final[x.Key],RegexOptions.IgnoreCase);
+                                        //Console.WriteLine("After : " + z);
+                                    }
+
+                                }
+                            }
+                            Helpers.towrite.Add(h, new List<string>() { str[2], z });
+                        }
+                        else
+                        {
+                            if (str[1] != null && str[1] != "")
+                            {
+                                foreach (var x in Helpers.replacements)
+                                {
+                                    foreach (var y in x.Value)
+                                    {
+                                        if (str[1].Contains(y))
+                                        {
+
+                                            Console.WriteLine("To Replace : " + y + " // Replacement Value : " + Helpers.final[x.Key]);
+                                            Console.WriteLine("Before : " + str[1]);
+                                            z = Regex.Replace(str[1], y, Helpers.final[x.Key], RegexOptions.IgnoreCase);
+                                            Console.WriteLine("After : " + z);
+
+                                        }
+
+                                    }
+                                }
+                                Helpers.towrite.Add(h, new List<string>() { str[2], z });
+                            }
+
+
+
+                        }
+                        if (str[1].Length < 1 && str[2].Length < 1)
+                        {
+                            z = "";
+                            Helpers.towrite.Add(h, new List<string>() { "NULL", "NULL"});
+
+                        }
+                    }
+
+                }
+                Console.WriteLine("Comparison : CSVARRAY : " + csvarray.Count() + " // DICT : " + Helpers.towrite.Count());
+                foreach(var x in Helpers.towrite)
+                {
+                    tw.WriteLine(x.Key + " // " + String.Join(" ; ", x.Value[0], x.Value[1]));
+                }
+                
+            }
+        }
     }
 }
