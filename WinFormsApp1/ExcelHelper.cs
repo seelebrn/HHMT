@@ -116,7 +116,8 @@ namespace WinFormsApp1
         public static void Main(string url, string path)
         {
             Helpers.lineorder.Clear();
-            string fullpath = Path.Combine("C:\\games\\fxl\\Translations", "DownloadedFromSpreadSheet", path);
+            string fullpath = Path.Combine(Form1.rootpath, "Translations", "DownloadedFromSpreadSheet", path);
+            string csv = Path.Combine(Form1.rootpath, "Translations", "DownloadedFromSpreadSheet", "csvarray.csv");
 
             WebClientEx wc = new WebClientEx(new CookieContainer());
             wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
@@ -130,17 +131,38 @@ namespace WinFormsApp1
             CsvParser.CsvParser csvparser = new CsvParser.CsvParser(delimeter: ',');
             var csvarray = csvparser.Parse(outputCSVdata);
             var i = 1;
+
+
             foreach (string[] str in csvarray)
             {
 
-                if(str != null)
+                if (str != null)
                 {
-                    if (str[0] != null && str[0] != "" && str[1] != null && str[1] != "" && str[0] != " " && str[1] != " ") 
-                {
-                    using (StreamWriter tw = new StreamWriter(fullpath, append: true))
+                    if (str[0] != null && str[0] != "" && str[1] != null && str[1] != "" && str[0] != " " && str[1] != " ")
                     {
-                        tw.WriteLine(str[0] + "¤" + "Line n° " + i + " : " + str[1]); //Delete this experimental feature when I'm done and replace it with tw.WriteLine(str[0] + "¤" + str[1])
+
+                        using (StreamWriter tw = new StreamWriter(fullpath, append: true))
+                        {
+                            tw.WriteLine(str[0] + "¤" + "Line n° " + str[2] + " : " + str[1]); //Delete this experimental feature when I'm done and replace it with tw.WriteLine(str[0] + "¤" + str[1])
                             Helpers.lineorder.Add(i, str[0]);
+
+                        }
+                    }
+                    if(str[0] == null|| str[0] == "")
+                    {
+                        using (StreamWriter tw = new StreamWriter(fullpath, append: true))
+                        {
+                            tw.WriteLine("We have an empty chinese line" + "¤" + "Line n° " + str[2]); //Delete this experimental feature when I'm done and replace it with tw.WriteLine(str[0] + "¤" + str[1])
+
+
+                        }
+                    }
+                    if (str[1] == null || str[1] == "")
+                    {
+                        using (StreamWriter tw = new StreamWriter(fullpath, append: true))
+                        {
+                            tw.WriteLine("We have an empty chinese line" + "¤" + "Line n° " + str[2]); //Delete this experimental feature when I'm done and replace it with tw.WriteLine(str[0] + "¤" + str[1])
+
 
                         }
                     }
@@ -153,7 +175,7 @@ namespace WinFormsApp1
         {
             Helpers.replacements.Clear();
             Helpers.final.Clear();
-            string fullpath = Path.Combine("C:\\games\\fxl\\Translations", "DownloadedFromSpreadSheet", path);
+            string fullpath = Path.Combine(path, "DownloadedFromSpreadSheet", path);
 
             WebClientEx wc = new WebClientEx(new CookieContainer());
             wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");

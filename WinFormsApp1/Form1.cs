@@ -10,6 +10,7 @@ namespace WinFormsApp1
 {
     public partial class Form1 : Form
     {
+        public static string rootpath;
         static bool flawed = false;
         public Form1()
         {
@@ -28,7 +29,7 @@ namespace WinFormsApp1
                     if (configdict.ContainsKey("DEFAULTPATH"))
                     {
                         textBox1.Text = configdict["DEFAULTPATH"];
-
+                        rootpath = textBox1.Text;
                     }
                 }
             }
@@ -185,6 +186,7 @@ namespace WinFormsApp1
                 Helpers.untranslated.Clear();
                 textBox3.AppendText("Fetching translations from " + Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Translations.txt").ToString());
                 var TranslationDict = Helpers.FileToDictionary(Path.Combine(textBox1.Text, "Translations", "DownloadedFromSpreadsheet", "Translations.txt"));
+                var NewTranslationdict = new Dictionary<string, string>();
                 foreach (var x in TranslationDict)
                 {
                     Console.Write("Key : " + x.Key + "// Value : " + x.Value);
@@ -230,6 +232,11 @@ namespace WinFormsApp1
                                     {
                                         textBox3.AppendText("Now translating " + initial + " to " + TranslationDict[initial] + Environment.NewLine);
                                         lines[i] = lines[i].Replace(match.ToString(), "\"" + TranslationDict[initial] + "\"");
+                                        if(!NewTranslationdict.ContainsKey(initial))
+                                        { 
+                                        NewTranslationdict.Add(initial, TranslationDict[initial]);
+                                        }
+
                                     }
                                     else
                                     {
@@ -262,6 +269,19 @@ namespace WinFormsApp1
 
                     }
                 }
+                var ObseleteLinesDict = new Dictionary<string, string>();
+
+                foreach(var line in TranslationDict.Keys)
+                {
+                    if(!NewTranslationdict.ContainsKey(line)) 
+                    {
+                        using (StreamWriter sw = File.AppendText(Path.Combine(textBox1.Text, "Translations", "UntranslatedLines", "ObseleteLinesDict.txt")))
+                        {
+                                sw.WriteLine(line + "¤" + TranslationDict[line]);
+                        }
+                    }
+                }
+
                 textBox3.AppendText("Patched game files have been generated. They are stored in " + textBox1.Text + @"\Translations\NewFiles\" + Environment.NewLine + "To use them, copy them to your data folder, i.e. " + textBox1.Text + @"\game\" + Environment.NewLine + "Hopefully, it will work fine !");
                 textBox3.AppendText(@"Notice that currently untranslated lines have been stored in \Translations\UntranslatedLines\UN.txt" + Environment.NewLine);
             }
@@ -281,7 +301,7 @@ namespace WinFormsApp1
         {
             if (Helpers.lineorder.ContainsValue(s))
             {
-                return Helpers.lineorder.FirstOrDefault(x => x.Value == s).Key + 1;
+                return Helpers.lineorder.FirstOrDefault(x => x.Value == s).Key;
             }
             else
             {
@@ -307,7 +327,7 @@ namespace WinFormsApp1
                         if (english.Contains("\""))
                         {
                             flawed = true;
-                            textBox3.AppendText("ERROR : Found double quotes in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine + lines[i] + Environment.NewLine + Environment.NewLine);
+                            textBox3.AppendText("ERROR : Found double quotes in translation line n°" + FindLineNumber(chinese) + " : " + Environment.NewLine + lines[i]  + Environment.NewLine + Environment.NewLine);
                         }
                         if ((chinese.Contains("【") || chinese.Contains("】")) && (!english.Contains("【") && !english.Contains("】")))
                         {
